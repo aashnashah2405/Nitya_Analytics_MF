@@ -875,6 +875,22 @@
     line-height: 1.5;
   }
 
+  .peer-range-btn {
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-dim);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 7px 18px;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .peer-range-btn:hover { border-color: var(--border); color: var(--text); }
+  .peer-range-btn.active { background: rgba(201,168,76,0.12); border-color: rgba(201,168,76,0.4); color: var(--gold); }
+
   /* FOOTER */
   footer {
     border-top: 1px solid var(--border);
@@ -1179,7 +1195,7 @@
       <div class="method-num">2</div>
       <div class="method-body">
         <div class="method-step-title">Composite Scoring</div>
-        <div class="method-step-desc">Funds are ranked within their category across non-overlapping return cohorts over 5 years (3M, 6M, 1Y windows). Recent performance (0–24 months) is weighted 2× over older cohorts, creating a composite score where lower = stronger.</div>
+        <div class="method-step-desc">Each fund is ranked within its category across six non-overlapping return windows spanning 5 years — three short-term windows (6M returns at 0–6, 6–12, and 12–24 months ago) and three longer-term windows (1Y returns at 12–24, 24–36, and 36–60 months ago). The three more recent windows are weighted <strong>2×</strong> and the three older ones <strong>1×</strong>. These weighted ranks are summed and divided by the number of valid cohorts to produce a composite score. <strong>A lower score means a stronger, more consistent fund.</strong> Ranking within categories rather than on raw returns ensures funds are judged against relevant peers, not distorted by sector- or market-regime differences.</div>
         <div class="method-tags">
           <span class="tag">Non-overlapping cohorts</span>
           <span class="tag">Category-relative ranking</span>
@@ -1217,15 +1233,7 @@
   </div>
 
   <!-- Scoring Formula -->
-  <div class="formula-box reveal">
-    <div class="formula-label">Composite Scoring Formula</div>
-    <div class="formula-eq">Score = [ 2×(R₆ₘ,0–6 + R₆ₘ,6–12 + R₁ᵧ,12–24) + 1×(R₁ᵧ,24–36 + R₁ᵧ,36–48 + R₁ᵧ,48–60) ] ÷ N
 
-  where  R = Category rank for that cohort (rank 1 = best performer)
-         N = Number of valid cohorts available
-  Lower composite score → stronger, more consistent fund</div>
-    <div class="formula-note">Rank-based aggregation is preferred over raw returns to reduce sensitivity to regime-specific return magnitudes and outliers.</div>
-  </div>
 </section>
 
 <div class="section-divider"></div>
@@ -1335,13 +1343,6 @@
       <div class="prob-bars" id="prob-bars-500"></div>
     </div>
 
-    <div class="chart-card full-width reveal">
-      <div class="chart-title">Outperformance Range vs NIFTY 50 by Holding Period</div>
-      <div class="chart-subtitle">Max outperformance, average alpha, and max underperformance</div>
-      <div class="chart-container">
-        <canvas id="range-chart"></canvas>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -1352,6 +1353,7 @@
   <div class="section-label">Peer Comparison</div>
   <h2 class="section-title">Comparable to <em>top-rated competitors,</em><br>without active allocation overlays</h2>
   <p class="section-desc">Comparison with Dezerv's Equity Revival Strategy — the most direct publicly available competitor — over the period 1st May 2023 to 24th Feb 2026.</p>
+  <p style="margin-top:10px; font-size:12px; color:var(--text-muted); background:rgba(255,255,255,0.04); border:1px solid var(--border-subtle); border-radius:8px; padding:10px 16px; display:inline-block;">⚠ Both Nitya and Dezerv figures shown here are <strong style="color:var(--text-dim)">pre-tax and pre-fees</strong> for a like-for-like comparison.</p>
 
   <div class="peer-cards reveal">
     <div class="peer-card highlight">
@@ -1384,13 +1386,18 @@
   </div>
 
   <div style="margin-top: 32px; background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 32px;" class="reveal">
+    <div style="display:flex; justify-content:flex-end; margin-bottom:20px; gap:8px;">
+      <button class="peer-range-btn active" onclick="setPeerRange('1Y', this)">1Y</button>
+      <button class="peer-range-btn" onclick="setPeerRange('2Y', this)">2Y</button>
+      <button class="peer-range-btn" onclick="setPeerRange('MAX', this)">Max</button>
+    </div>
     <div class="chart-container">
       <canvas id="peer-chart"></canvas>
     </div>
   </div>
 
   <div style="margin-top: 24px; background: rgba(201,168,76,0.06); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; font-size: 13.5px; color: var(--text-dim); line-height: 1.7; font-style: italic;" class="reveal">
-    Despite having no active allocation strategy in place, the Nitya model delivers performance comparable to Dezerv's actively managed strategy — while significantly outperforming a passive NIFTY 50 buy-and-hold approach. The model's advantage compounds over time.
+    Despite having no active allocation strategy in place, the Nitya model delivers performance comparable to Dezerv's actively managed strategy — while significantly outperforming a passive NIFTY 50 buy-and-hold approach. The model's advantage compounds over time. <strong style="color:var(--text-dim)">Both series are shown pre-tax and pre-fees for a like-for-like comparison.</strong>
   </div>
 </section>
 
@@ -1795,15 +1802,11 @@ const data = {
     { label: 'Avg Portfolio Performance',       vals: [20.32, 21.55, 22.48, 22.15, 22.19, 20.45, 16.49], cls: 'val-gold' },
     { label: 'Avg Outperformance vs NIFTY 50',  vals: [6.59,  7.48,  7.52,  7.48,  7.22,  6.75,  4.10],  cls: 'val-green' },
     { label: 'Probability of Outperformance',   vals: ['63.1%','80.6%','91.7%','100%','97.2%','100%','100%'], cls: '' },
-    { label: 'Max Underperformance vs NIFTY 50',vals: ['-20.52%','-13.77%','-7.84%','+0.09%','-0.54%','+2.58%','+2.17%'], cls: 'val-red' },
-    { label: 'Max Outperformance vs NIFTY 50',  vals: ['+43.91%','+19.22%','+18.56%','+16.15%','+13.33%','+9.17%','+5.84%'], cls: 'val-green' },
   ],
   nifty500: [
     { label: 'Avg Portfolio Performance',         vals: [20.32, 21.55, 22.48, 22.15, 22.19, 20.45, 16.49], cls: 'val-gold' },
     { label: 'Avg Outperformance vs NIFTY 500',   vals: [4.85,  5.35,  5.66,  5.56,  5.35,  4.92,  3.11],  cls: 'val-green' },
     { label: 'Probability of Outperformance',     vals: ['65.5%','79.2%','91.7%','97.9%','100%','100%','100%'], cls: '' },
-    { label: 'Max Underperformance vs NIFTY 500', vals: ['-13.17%','-8.93%','-4.55%','-0.75%','+0.70%','+2.76%','+1.42%'], cls: 'val-red' },
-    { label: 'Max Outperformance vs NIFTY 500',   vals: ['+31.20%','+16.60%','+14.64%','+11.67%','+9.93%','+6.99%','+4.57%'], cls: 'val-green' },
   ]
 };
 
@@ -1958,63 +1961,10 @@ function animateBars() {
   });
 }
 
-// Range chart
-const rangeCtx = document.getElementById('range-chart').getContext('2d');
-new Chart(rangeCtx, {
-  type: 'bar',
-  data: {
-    labels: periods,
-    datasets: [
-      {
-        label: 'Max Outperformance',
-        data: [43.91, 19.22, 18.56, 16.15, 13.33, 9.17, 5.84],
-        backgroundColor: 'rgba(90,185,122,0.7)',
-        borderRadius: 4,
-        barPercentage: 0.6,
-      },
-      {
-        label: 'Average Alpha',
-        data: [6.59, 7.48, 7.52, 7.48, 7.22, 6.75, 4.10],
-        backgroundColor: 'rgba(201,168,76,0.85)',
-        borderRadius: 4,
-        barPercentage: 0.6,
-      },
-      {
-        label: 'Max Underperformance',
-        data: [-20.52, -13.77, -7.84, 0.09, -0.54, 2.58, 2.17],
-        backgroundColor: 'rgba(224,90,90,0.65)',
-        borderRadius: 4,
-        barPercentage: 0.6,
-      }
-    ]
-  },
-  options: {
-    ...chartDefaults,
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      ...chartDefaults.plugins,
-      tooltip: {
-        ...chartDefaults.plugins.tooltip,
-        callbacks: {
-          label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y > 0 ? '+' : ''}${ctx.parsed.y.toFixed(2)}%`
-        }
-      }
-    },
-    scales: {
-      x: chartDefaults.scales.x,
-      y: {
-        ...chartDefaults.scales.y,
-        ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + '%' }
-      }
-    }
-  }
-});
-
 // Peer comparison chart
 const peerCtx = document.getElementById('peer-chart').getContext('2d');
 const peerLabels = ['May\'23','Jun\'23','Jul\'23','Aug\'23','Sep\'23','Oct\'23','Nov\'23','Dec\'23','Jan\'24','Feb\'24','Mar\'24','Apr\'24','May\'24','Jun\'24','Jul\'24','Aug\'24','Sep\'24','Oct\'24','Nov\'24','Dec\'24','Jan\'25','Feb\'25','Mar\'25','Apr\'25','May\'25','Jun\'25','Jul\'25','Aug\'25','Sep\'25','Oct\'25','Nov\'25','Dec\'25','Jan\'26'];
-new Chart(peerCtx, {
+const peerChart = new Chart(peerCtx, {
   type: 'line',
   data: {
     labels: peerLabels,
@@ -2074,6 +2024,30 @@ new Chart(peerCtx, {
     }
   }
 });
+
+// Peer range toggle
+const allPeerLabels = ['May\'23','Jun\'23','Jul\'23','Aug\'23','Sep\'23','Oct\'23','Nov\'23','Dec\'23','Jan\'24','Feb\'24','Mar\'24','Apr\'24','May\'24','Jun\'24','Jul\'24','Aug\'24','Sep\'24','Oct\'24','Nov\'24','Dec\'24','Jan\'25','Feb\'25','Mar\'25','Apr\'25','May\'25','Jun\'25','Jul\'25','Aug\'25','Sep\'25','Oct\'25','Nov\'25','Dec\'25','Jan\'26'];
+const allNitya   = [1000,1041.07,1092.46,1157.91,1189.86,1205.08,1170.52,1279.73,1360.40,1428.17,1464.59,1469.81,1533.63,1547.94,1664.69,1716.27,1726.65,1760.52,1670.24,1662.07,1646.05,1543.12,1396.32,1482.63,1536.18,1627.64,1685.25,1638.53,1651.94,1657.13,1701.52,1694.64,1673.74];
+const allDezerv  = [1000,1039.70,1092.62,1143.43,1156.01,1184.56,1155.42,1236.64,1322.59,1353.67,1378.71,1380.65,1437.94,1452.18,1555.43,1624.49,1648.04,1684.47,1590.81,1596.85,1582.00,1514.77,1409.04,1499.22,1544.34,1597.16,1655.62,1623.00,1602.39,1617.13,1678.26,1698.90,1693.63];
+const allNifty50 = [1000,1023.40,1062.22,1092.36,1075.85,1087.09,1051.16,1121.94,1203.54,1201.08,1236.58,1243.40,1251.31,1247.20,1336.39,1384.49,1396.95,1428.00,1345.38,1335.79,1314.30,1299.87,1224.73,1282.35,1347.04,1370.09,1413.88,1359.83,1363.14,1374.83,1423.86,1446.42,1447.36];
+
+function setPeerRange(range, btn) {
+  document.querySelectorAll('.peer-range-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  let slice = allPeerLabels.length; // MAX
+  if (range === '1Y') slice = 13;
+  if (range === '2Y') slice = 25;
+  const start = allPeerLabels.length - slice;
+  const labels = allPeerLabels.slice(start);
+  // Rebase to 1000 from the new start point
+  const rebase = (arr) => { const base = arr[start]; return arr.slice(start).map(v => +(v/base*1000).toFixed(2)); };
+  peerChart.data.labels = labels;
+  peerChart.data.datasets[0].data = rebase(allNitya);
+  peerChart.data.datasets[1].data = rebase(allDezerv);
+  peerChart.data.datasets[2].data = rebase(allNifty50);
+  peerChart.options.scales.y.min = range === '1Y' ? 800 : 900;
+  peerChart.update();
+}
 
 // Recovery chart (Jan 2018 portfolio)
 const recovCtx = document.getElementById('recovery-chart').getContext('2d');
