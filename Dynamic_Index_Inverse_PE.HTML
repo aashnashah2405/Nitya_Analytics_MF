@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inverse PE Allocation — Strategy Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--bg:#0a0c10;--bg1:#0f1117;--bg2:#151820;--bg3:#1c2028;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--text:#e8eaf0;--text2:#8892a4;--text3:#545e70;--accent:#c8f557;--blue:#4a9eff;--purple:#a78bfa;--orange:#fb923c;--red:#f87171;--green:#4ade80;--mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0;}html{scroll-behavior:smooth;}body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6;min-height:100vh;}
+.shell{max-width:1300px;margin:0 auto;padding:0 28px 80px;}
+header{padding:40px 0 36px;border-bottom:1px solid var(--border);margin-bottom:40px;display:flex;flex-direction:column;gap:10px;}
+.header-top{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;}
+h1{font-family:var(--mono);font-size:22px;font-weight:400;letter-spacing:-0.3px;color:var(--text);}
+.badge{font-family:var(--mono);font-size:10px;font-weight:500;padding:3px 8px;border-radius:4px;letter-spacing:0.5px;text-transform:uppercase;}
+.badge-green{background:rgba(74,222,128,0.12);color:var(--green);border:1px solid rgba(74,222,128,0.2);}
+.badge-yellow{background:rgba(200,245,87,0.1);color:var(--accent);border:1px solid rgba(200,245,87,0.2);}
+.subtitle{font-size:13px;color:var(--text2);max-width:820px;line-height:1.7;}.subtitle strong{color:var(--text);font-weight:500;}
+.data-note{font-family:var(--mono);font-size:11px;color:var(--text3);padding:8px 12px;background:var(--bg2);border-left:2px solid var(--accent);border-radius:0 4px 4px 0;margin-top:4px;max-width:820px;}
+.sec-title{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border);}
+section{margin-bottom:56px;}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+thead th{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:var(--text3);padding:11px 14px;text-align:right;background:var(--bg2);border-bottom:1px solid var(--border);white-space:nowrap;}
+thead th:first-child{text-align:left;}
+tbody td{padding:10px 14px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap;font-family:var(--mono);font-size:12px;color:var(--text2);}
+tbody td:first-child{text-align:left;font-weight:500;color:var(--text);}
+tbody tr:last-child td{border-bottom:none;background:rgba(200,245,87,0.03);}
+tbody tr:hover td{background:var(--bg2);}
+.pos{color:var(--green)!important;}.neg{color:var(--red)!important;}.neu{color:var(--text2)!important;}.hi{color:var(--accent)!important;}
+.controls{display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;}
+.ctrl-label{font-family:var(--mono);font-size:11px;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase;}
+select{background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:6px;padding:8px 32px 8px 14px;font-family:var(--mono);font-size:12px;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23545e70' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;min-width:160px;}
+select:focus{border-color:var(--accent);}
+.cards-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:24px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;}
+.card-label{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:var(--text3);margin-bottom:6px;}
+.card-val{font-family:var(--mono);font-size:24px;font-weight:300;letter-spacing:-0.5px;}
+.card-sub{font-size:11px;color:var(--text3);margin-top:3px;}
+.alloc-section{margin-bottom:24px;}
+.alloc-header{font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;}
+.alloc-bar{display:flex;height:28px;border-radius:6px;overflow:hidden;border:1px solid var(--border);margin-bottom:8px;}
+.alloc-seg{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;transition:width 0.4s ease;overflow:hidden;}
+.alloc-labels{display:flex;gap:20px;font-family:var(--mono);font-size:11px;color:var(--text2);}
+.alloc-dot{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:5px;vertical-align:middle;}
+.ret-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;margin-bottom:32px;}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:900px){.charts-grid{grid-template-columns:1fr;}}
+.chart-card{background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:18px 20px;}
+.chart-card-title{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;}
+.chart-legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;}
+.leg-item{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--text2);}
+.leg-line{width:16px;height:2px;border-radius:1px;}
+.chart-wrap{position:relative;width:100%;}
+::-webkit-scrollbar{width:6px;height:6px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px;}
+.strategy-block{margin-top:4px;}
+.strategy-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;margin-bottom:12px;}
+.s-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;}
+.s-card-head{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:var(--accent);margin-bottom:8px;}
+.s-card p{font-size:12.5px;color:var(--text2);line-height:1.7;}.s-card p strong{color:var(--text);font-weight:500;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="header-top">
+      <h1>Inverse PE Cap Allocation</h1>
+      <span class="badge badge-green">Live Backtest</span>
+      <span class="badge badge-yellow">Jan 2018 → Mar 2026</span>
+    </div>
+    <div class="strategy-block">
+      <div class="strategy-grid">
+        <div class="s-card">
+          <div class="s-card-head">What is this strategy?</div>
+          <p>This is a <strong>valuation-driven cap rotation</strong> strategy. Every month it looks at the median PE ratio of three market cap segments — large (NIFTY100, rank 1–100), mid (NIFTYMIDCAP150, rank 101–250) and small (NIFTYSMALLCAP250, rank 251–500) — and allocates capital proportionally to their <strong>inverse PE</strong>. The lower the PE of a segment, the higher the allocation to it. The idea: systematically tilt toward whichever part of the market is relatively cheaper, and away from whatever is expensive.</p>
+        </div>
+        <div class="s-card">
+          <div class="s-card-head">How are weights calculated?</div>
+          <p>For each month, compute <strong>1/PE</strong> for each segment (the earnings yield). Normalise these three values so they sum to 100% — that becomes the target allocation. For example, if large PE = 30, mid PE = 40, small PE = 25: inverse PEs are 3.33%, 2.50%, 4.00% → normalised weights ≈ <strong>34% large, 25% mid, 41% small</strong>. Small cap gets the most because it has the lowest PE (highest earnings yield).</p>
+        </div>
+        <div class="s-card">
+          <div class="s-card-head">Rebalancing &amp; execution</div>
+          <p>On the <strong>1st of every month</strong>, the PE data is published. The portfolio immediately rebalances to the new target weights, executed at the <strong>closing price of the first trading day</strong> of that month. Legs that are overweight are sold; proceeds (after tax) are used to buy underweight legs. Each month's PE snapshot thus directly drives that month's allocation.</p>
+        </div>
+        <div class="s-card">
+          <div class="s-card-head">Tax treatment (FIFO)</div>
+          <p>When selling during a rebalance, gains are taxed using the <strong>FIFO</strong> method — oldest units sold first. If a lot was held for <strong>less than 12 months</strong>, gains are taxed at <strong>STCG 20%</strong>. If held <strong>12 months or more</strong>, at <strong>LTCG 12.5%</strong>. Losses attract no tax. There is <strong>no exit tax</strong> on the final liquidation at March 2026 — results show gross pre-liquidation value.</p>
+        </div>
+        <div class="s-card">
+          <div class="s-card-head">Portfolio construction</div>
+          <p>A fresh <strong>₹100 portfolio</strong> is started on the first trading day of every month from <strong>January 2018 to March 2025</strong> — 87 portfolios in total. Each is held independently and all exit on the <strong>first trading day close of March 2026</strong>. The minimum holding for any portfolio is exactly <strong>1 year</strong> (the March 2025 cohort). Returns at 1y, 2y … 8y snapshots are measured at the first trading day close of the respective anniversary month.</p>
+        </div>
+        <div class="s-card">
+          <div class="s-card-head">Benchmark</div>
+          <p>Each portfolio is benchmarked against a simple <strong>NIFTY500 buy-and-hold</strong> — ₹100 invested in NIFTY500 at the same entry date, held untouched to the same exit. The NIFTY500 covers the full market (large + mid + small) and represents a passive alternative that requires no monthly rebalancing or tax events. Outperformance = portfolio CAGR minus NIFTY500 CAGR over the same holding period.</p>
+        </div>
+      </div>
+    </div>
+    <div class="data-note">
+      Prices: close of first trading day of each IST month from nse_indices_eod. All three indices available from Jan 2018. 87 portfolios: Jan 2018 → Mar 2025 starts. PE data: monthly median PE by market cap category.
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-title">Strategy Summary — 87 portfolios (Jan 2018 → Mar 2025 starts, all exiting first trading day close of Mar 2026)</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Horizon</th><th>N</th><th>Avg portfolio</th><th>Avg N500</th><th>Avg outperf</th><th>Median outperf</th><th>P(outperf)</th><th>Best outperf</th><th>Worst outperf</th></tr></thead>
+        <tbody id="sumBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <div class="sec-title">Portfolio Deep Dive</div>
+    <div class="controls">
+      <span class="ctrl-label">Start month</span>
+      <select id="msel"></select>
+    </div>
+    <div id="initAlloc" class="alloc-section"></div>
+    <div class="cards-row" id="metCards"></div>
+    <div class="ret-wrap">
+      <table>
+        <thead><tr><th style="text-align:left;">Horizon</th><th>Holding</th><th>Portfolio CAGR</th><th>NIFTY500 CAGR</th><th>Outperformance</th></tr></thead>
+        <tbody id="retBody"></tbody>
+      </table>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-card-title">Portfolio value vs NIFTY500 (₹100 start)</div>
+        <div class="chart-legend" id="vleg"></div>
+        <div class="chart-wrap" style="height:260px;"><canvas id="vc" role="img" aria-label="Line chart comparing portfolio value vs NIFTY500 over time"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">Monthly allocation breakdown</div>
+        <div class="chart-legend" id="aleg"></div>
+        <div class="chart-wrap" style="height:260px;"><canvas id="ac" role="img" aria-label="Stacked area chart of monthly allocation to large, mid, small cap"></canvas></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+// ── PE DATA: median PE as of 1st of each IST month ────────────────────────────
+const PE={
+'2018-01':{l:28.99,m:36.07,s:31.62},'2018-02':{l:31.00,m:34.16,s:30.70},
+'2018-03':{l:29.61,m:32.45,s:30.23},'2018-04':{l:27.35,m:29.74,s:28.89},
+'2018-05':{l:30.43,m:32.69,s:28.88},'2018-06':{l:29.35,m:32.48,s:26.82},
+'2018-07':{l:27.75,m:29.89,s:24.60},'2018-08':{l:27.29,m:31.92,s:24.63},
+'2018-09':{l:30.44,m:31.31,s:24.49},'2018-10':{l:28.99,m:25.63,s:21.14},
+'2018-11':{l:26.40,m:26.82,s:20.19},'2018-12':{l:28.97,m:25.89,s:21.34},
+'2019-01':{l:26.73,m:26.56,s:21.68},'2019-02':{l:27.44,m:27.74,s:20.05},
+'2019-03':{l:26.36,m:27.75,s:20.07},'2019-04':{l:30.49,m:27.72,s:22.21},
+'2019-05':{l:28.81,m:28.97,s:21.34},'2019-06':{l:29.43,m:29.89,s:22.00},
+'2019-07':{l:28.68,m:28.23,s:21.00},'2019-08':{l:25.20,m:24.75,s:19.16},
+'2019-09':{l:25.71,m:25.77,s:18.64},'2019-10':{l:24.87,m:24.70,s:18.98},
+'2019-11':{l:30.03,m:25.43,s:19.96},'2019-12':{l:30.65,m:24.79,s:20.08},
+'2020-01':{l:29.19,m:26.08,s:18.55},'2020-02':{l:28.72,m:25.27,s:18.95},
+'2020-03':{l:27.82,m:24.22,s:18.91},'2020-04':{l:23.91,m:22.32,s:13.24},
+'2020-05':{l:27.04,m:24.95,s:14.58},'2020-06':{l:26.68,m:25.19,s:15.11},
+'2020-07':{l:30.86,m:26.52,s:17.14},'2020-08':{l:29.51,m:31.00,s:18.56},
+'2020-09':{l:33.22,m:29.60,s:19.62},'2020-10':{l:36.74,m:29.32,s:20.46},
+'2020-11':{l:35.07,m:28.91,s:19.71},'2020-12':{l:37.55,m:31.92,s:22.48},
+'2021-01':{l:38.08,m:32.11,s:22.91},'2021-02':{l:35.83,m:33.18,s:21.97},
+'2021-03':{l:40.14,m:32.76,s:24.05},'2021-04':{l:36.11,m:32.09,s:23.83},
+'2021-05':{l:34.20,m:31.24,s:24.00},'2021-06':{l:35.08,m:33.67,s:26.34},
+'2021-07':{l:32.30,m:33.81,s:26.62},'2021-08':{l:33.81,m:35.23,s:28.21},
+'2021-09':{l:37.02,m:37.11,s:27.78},'2021-10':{l:37.64,m:35.62,s:28.49},
+'2021-11':{l:36.85,m:38.09,s:27.80},'2021-12':{l:36.55,m:37.23,s:26.71},
+'2022-01':{l:36.88,m:37.22,s:30.01},'2022-02':{l:35.14,m:36.27,s:29.61},
+'2022-03':{l:34.81,m:34.29,s:26.48},'2022-04':{l:33.73,m:35.54,s:28.34},
+'2022-05':{l:31.09,m:36.05,s:27.72},'2022-06':{l:32.93,m:33.32,s:24.87},
+'2022-07':{l:30.49,m:30.75,s:22.14},'2022-08':{l:32.60,m:34.40,s:23.01},
+'2022-09':{l:32.46,m:35.82,s:23.74},'2022-10':{l:32.02,m:35.50,s:24.78},
+'2022-11':{l:31.29,m:36.02,s:24.58},'2022-12':{l:30.35,m:37.41,s:25.10},
+'2023-01':{l:30.78,m:38.96,s:27.40},'2023-02':{l:29.90,m:37.74,s:25.58},
+'2023-03':{l:31.53,m:38.10,s:25.93},'2023-04':{l:27.72,m:36.58,s:26.07},
+'2023-05':{l:27.84,m:37.52,s:26.02},'2023-06':{l:34.19,m:37.40,s:28.43},
+'2023-07':{l:30.37,m:36.63,s:28.48},'2023-08':{l:30.19,m:39.02,s:32.29},
+'2023-09':{l:31.58,m:40.69,s:36.89},'2023-10':{l:28.40,m:37.47,s:33.70},
+'2023-11':{l:27.52,m:35.04,s:33.26},'2023-12':{l:29.21,m:39.15,s:36.41},
+'2024-01':{l:30.62,m:39.01,s:36.59},'2024-02':{l:30.09,m:40.33,s:37.85},
+'2024-03':{l:30.80,m:43.43,s:37.82},'2024-04':{l:29.69,m:42.75,s:37.81},
+'2024-05':{l:29.77,m:44.03,s:39.72},'2024-06':{l:31.44,m:46.14,s:39.82},
+'2024-07':{l:31.64,m:49.96,s:44.27},'2024-08':{l:33.70,m:48.80,s:46.90},
+'2024-09':{l:34.84,m:48.10,s:46.94},'2024-10':{l:35.96,m:47.65,s:47.71},
+'2024-11':{l:36.87,m:45.53,s:46.80},'2024-12':{l:35.15,m:45.47,s:44.53},
+'2025-01':{l:31.88,m:46.75,s:43.33},'2025-02':{l:31.64,m:41.97,s:39.98},
+'2025-03':{l:28.95,m:40.07,s:32.96},'2025-04':{l:28.73,m:42.80,s:35.83},
+'2025-05':{l:30.32,m:42.03,s:35.57},'2025-06':{l:31.23,m:45.30,s:39.30},
+'2025-07':{l:31.64,m:47.13,s:39.77},'2025-08':{l:31.34,m:44.07,s:37.66},
+'2025-09':{l:32.68,m:45.30,s:38.53},'2025-10':{l:31.50,m:41.85,s:36.30},
+'2025-11':{l:33.16,m:43.94,s:37.28},'2025-12':{l:31.48,m:42.74,s:37.24},
+'2026-01':{l:30.04,m:40.03,s:36.85},'2026-02':{l:29.89,m:37.96,s:34.30}
+};
+
+// ── PRICE DATA: close of FIRST TRADING DAY of each IST month ──────────────────
+// P['YYYY-MM'] = PE data dated YYYY-MM-01 → execute at close of first trading day of IST month YYYY-MM
+// Entry for portfolio "M" = P[M].  Monthly rebalancing at P[M+1], P[M+2]...  Exit = P['2026-03'].
+const P={
+'2018-01':{n:10897.75,nm:7303.11,ns:7273.00,f:9434.50},
+'2018-02':{n:11393.55,nm:7104.06,ns:7021.49,f:9697.90},
+'2018-03':{n:10861.40,nm:6817.37,ns:6770.97,f:9261.90},
+'2018-04':{n:10596.00,nm:6701.16,ns:6393.98,f:9023.60},
+'2018-05':{n:11145.90,nm:7082.38,ns:6704.78,f:9496.50},
+'2018-06':{n:11064.15,nm:6676.72,ns:6289.76,f:9315.35},
+'2018-07':{n:10929.85,nm:6391.06,ns:5733.78,f:9109.00},
+'2018-08':{n:11633.85,nm:6665.68,ns:5943.02,f:9650.60},
+'2018-09':{n:12003.10,nm:7034.77,ns:6160.43,f:9992.00},
+'2018-10':{n:11197.05,nm:6132.98,ns:5134.10,f:9165.50},
+'2018-11':{n:10604.60,nm:6052.68,ns:5056.80,f:8753.45},
+'2018-12':{n:11092.25,nm:6195.77,ns:5125.73,f:9109.15},
+'2019-01':{n:11110.15,nm:6339.30,ns:5295.48,f:9170.00},
+'2019-02':{n:10996.80,nm:6044.65,ns:5021.60,f:9003.85},
+'2019-03':{n:10959.90,nm:5993.00,ns:4907.55,f:8955.95},
+'2019-04':{n:11832.65,nm:6522.55,ns:5490.60,f:9702.00},
+'2019-05':{n:11874.25,nm:6292.40,ns:5328.25,f:9664.30},
+'2019-06':{n:12028.25,nm:6442.20,ns:5412.90,f:9805.05},
+'2019-07':{n:11957.50,nm:6360.05,ns:5163.45,f:9713.00},
+'2019-08':{n:11221.20,nm:5772.90,ns:4581.60,f:9044.95},
+'2019-09':{n:10925.20,nm:5626.85,ns:4416.20,f:8802.35},
+'2019-10':{n:11613.30,nm:5912.20,ns:4677.40,f:9340.90},
+'2019-11':{n:12037.25,nm:6201.65,ns:4789.75,f:9689.65},
+'2019-12':{n:12175.15,nm:6288.20,ns:4795.85,f:9798.00},
+'2020-01':{n:12267.75,nm:6321.60,ns:4857.40,f:9872.55},
+'2020-02':{n:12086.90,nm:6661.75,ns:5200.75,f:9861.45},
+'2020-03':{n:11251.55,nm:6234.45,ns:4774.90,f:9178.80},
+'2020-04':{n:8731.15, nm:4493.25,ns:3201.60,f:6996.75},
+'2020-05':{n:10006.90,nm:5149.60,ns:3615.75,f:8012.90},
+'2020-06':{n:9996.40, nm:5199.90,ns:3651.95,f:8020.10},
+'2020-07':{n:10486.90,nm:5626.20,ns:4067.25,f:8474.80},
+'2020-08':{n:11222.95,nm:5866.70,ns:4320.40,f:9035.75},
+'2020-09':{n:11496.05,nm:6362.05,ns:4833.80,f:9372.05},
+'2020-10':{n:11385.20,nm:6481.45,ns:5000.70,f:9341.75},
+'2020-11':{n:11777.85,nm:6507.25,ns:4912.75,f:9595.95},
+'2020-12':{n:13225.70,nm:7521.30,ns:5669.50,f:10835.15},
+'2021-01':{n:14090.75,nm:7862.90,ns:6076.20,f:11518.30},
+'2021-02':{n:14361.65,nm:8118.05,ns:6262.40,f:11770.15},
+'2021-03':{n:14889.65,nm:8950.15,ns:7017.45,f:12368.30},
+'2021-04':{n:14807.45,nm:8988.90,ns:6952.55,f:12313.70},
+'2021-05':{n:14790.60,nm:9128.70,ns:7271.15,f:12364.35},
+'2021-06':{n:15798.70,nm:9714.95,ns:8004.75,f:13226.35},
+'2021-07':{n:15959.40,nm:10182.05,ns:8452.25,f:13473.55},
+'2021-08':{n:16166.95,nm:10644.90,ns:9206.20,f:13783.70},
+'2021-09':{n:17373.10,nm:10726.00,ns:8854.85,f:14555.90},
+'2021-10':{n:17845.10,nm:11361.35,ns:9364.50,f:15052.65},
+'2021-11':{n:18134.60,nm:11579.45,ns:9474.95,f:15302.70},
+'2021-12':{n:17270.25,nm:11223.55,ns:9336.20,f:14648.35},
+'2022-01':{n:17618.80,nm:11543.55,ns:9840.00,f:14996.20},
+'2022-02':{n:17547.40,nm:11413.65,ns:9813.10,f:14921.45},
+'2022-03':{n:17016.55,nm:10621.00,ns:8887.65,f:14307.95},
+'2022-04':{n:17660.35,nm:11131.10,ns:9441.45,f:14894.50},
+'2022-05':{n:17419.45,nm:11144.90,ns:9397.75,f:14736.30},
+'2022-06':{n:16767.50,nm:10616.30,ns:8673.10,f:14119.60},
+'2022-07':{n:15929.40,nm:10042.80,ns:8088.60,f:13387.55},
+'2022-08':{n:17598.80,nm:11364.15,ns:8935.05,f:14846.85},
+'2022-09':{n:17924.30,nm:11896.95,ns:9313.85,f:15211.20},
+'2022-10':{n:17438.60,nm:11654.45,ns:9198.75,f:14829.35},
+'2022-11':{n:18243.40,nm:11868.15,ns:9372.00,f:15424.00},
+'2022-12':{n:18919.55,nm:12093.50,ns:9651.05,f:15946.15},
+'2023-01':{n:18334.30,nm:11970.30,ns:9552.80,f:15523.65},
+'2023-02':{n:17601.00,nm:11596.65,ns:9261.70,f:14935.50},
+'2023-03':{n:17083.80,nm:11411.25,ns:8924.15,f:14518.75},
+'2023-04':{n:17186.15,nm:11352.25,ns:8787.90,f:14557.85},
+'2023-05':{n:17989.30,nm:12037.15,ns:9452.85,f:15300.75},
+'2023-06':{n:18438.30,nm:12623.35,ns:9913.40,f:15766.40},
+'2023-07':{n:19099.55,nm:13401.45,ns:10544.20,f:16430.00},
+'2023-08':{n:19679.35,nm:14140.00,ns:11355.00,f:17059.00},
+'2023-09':{n:19204.80,nm:14693.85,ns:11931.20,f:16924.30},
+'2023-10':{n:19492.70,nm:15180.45,ns:12307.95,f:17254.40},
+'2023-11':{n:19035.35,nm:14566.30,ns:12023.75,f:16801.10},
+'2023-12':{n:20201.00,nm:15963.25,ns:13252.00,f:17987.95},
+'2024-01':{n:21934.70,nm:17174.00,ns:14129.70,f:19469.50},
+'2024-02':{n:22051.55,nm:17884.70,ns:15063.50,f:19802.10},
+'2024-03':{n:22526.30,nm:17831.10,ns:14965.05,f:20090.05},
+'2024-04':{n:23107.15,nm:18084.70,ns:14762.15,f:20492.55},
+'2024-05':{n:23436.50,nm:18893.00,ns:15833.40,f:20997.20},
+'2024-06':{n:23518.05,nm:19308.75,ns:15626.65,f:21103.30},
+'2024-07':{n:25155.70,nm:21029.90,ns:17367.65,f:22727.60},
+'2024-08':{n:26025.60,nm:21860.95,ns:17948.00,f:23530.80},
+'2024-09':{n:26335.00,nm:21862.85,ns:18157.70,f:23760.70},
+'2024-10':{n:26890.15,nm:22311.95,ns:18410.70,f:24245.20},
+'2024-11':{n:25059.50,nm:20876.70,ns:17751.20,f:22689.35},
+'2024-12':{n:25198.15,nm:21105.95,ns:17840.10,f:22835.85},
+'2025-01':{n:24495.55,nm:21141.20,ns:17752.25,f:22375.40},
+'2025-02':{n:24053.45,nm:19850.95,ns:15851.05,f:21580.90},
+'2025-03':{n:22479.45,nm:17750.55,ns:13844.55,f:19880.90},
+'2025-04':{n:23713.80,nm:18931.40,ns:15030.10,f:21070.75},
+'2025-05':{n:24843.80,nm:19873.15,ns:15359.45,f:22030.05},
+'2025-06':{n:25333.65,nm:21240.80,ns:16953.75,f:22834.50},
+'2025-07':{n:26139.50,nm:21988.65,ns:17797.80,f:23617.20},
+'2025-08':{n:25380.50,nm:21361.30,ns:17144.25,f:22914.95},
+'2025-09':{n:25231.20,nm:21111.85,ns:16738.35,f:22713.55},
+'2025-10':{n:25295.15,nm:21038.70,ns:16692.75,f:22734.10},
+'2025-11':{n:26369.50,nm:22045.95,ns:17313.90,f:23710.40},
+'2025-12':{n:26719.75,nm:22372.30,ns:16770.60,f:23922.45},
+'2026-01':{n:26689.30,nm:22276.90,ns:16684.75,f:23871.55},
+'2026-02':{n:25385.85,nm:21041.80,ns:15421.05,f:22611.30},
+'2026-03':{n:25563.50,nm:21476.25,ns:15580.40,f:22835.95}
+};
+
+// ── HELPERS ────────────────────────────────────────────────────────────────────
+const MN=['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function mLbl(ym){const[y,m]=ym.split('-');return MN[+m]+' '+y;}
+
+const ALL_M=[];
+{let y=2018,m=1;while(y<2026||(y===2026&&m<=3)){ALL_M.push(`${y}-${String(m).padStart(2,'0')}`);m++;if(m>12){m=1;y++;}}}
+
+function addM(ym,n){let[y,mo]=ym.split('-').map(Number);mo+=n;while(mo>12){mo-=12;y++;}while(mo<1){mo+=12;y--;}return`${y}-${String(mo).padStart(2,'0')}`;}
+function diffM(a,b){const[ya,ma]=a.split('-').map(Number);const[yb,mb]=b.split('-').map(Number);return(yb-ya)*12+(mb-ma);}
+
+function getWts(month){
+  const pe=PE[month];
+  if(!pe)return{n:1/3,nm:1/3,ns:1/3};
+  const il=1/pe.l,im=1/pe.m,is=1/pe.s,tot=il+im+is;
+  return{n:il/tot,nm:im/tot,ns:is/tot};
+}
+
+function sellFIFO(lots,sellU,price,curM){
+  let rem=sellU,tax=0;const kept=[];
+  for(const lot of lots){
+    if(rem<1e-10){kept.push(lot);continue;}
+    const take=Math.min(lot.u,rem);
+    const gain=(price-lot.c)*take;
+    if(gain>0)tax+=gain*(diffM(lot.m,curM)>=12?0.125:0.20);
+    rem-=take;
+    if(lot.u-take>1e-10)kept.push({m:lot.m,c:lot.c,u:lot.u-take});
+  }
+  return[kept,tax];
+}
+function su(lots){return lots.reduce((s,l)=>s+l.u,0);}
+
+// ── SIMULATION ────────────────────────────────────────────────────────────────
+// Each month M: enter/rebalance at P[M] close using PE[M] weights.
+// Exit: P['2026-03']. No rebalancing on exit month.
+function runSim(sm){
+  const IDX=['n','nm','ns'];
+  const pos={n:[],nm:[],ns:[]};
+  const w0=getWts(sm),p0=P[sm];
+  if(!p0)return null;
+  IDX.forEach(k=>{const w=w0[k],pr=p0[k];if(w>1e-10&&pr)pos[k].push({m:sm,c:pr,u:(100*w)/pr});});
+  const hist=[],f0=p0.f;
+  for(const month of ALL_M){
+    if(month<sm)continue;
+    const pr=P[month];if(!pr)break;
+    let tv=0;const cv={};
+    IDX.forEach(k=>{cv[k]=su(pos[k])*pr[k];tv+=cv[k];});
+    const aw={};IDX.forEach(k=>{aw[k]=tv>0?cv[k]/tv:0;});
+    hist.push({m:month,pv:tv,n5v:f0?100*pr.f/f0:null,aw:{...aw}});
+    if(month==='2026-03')break;
+    // Rebalance using current month's PE at current month's close
+    const nw=getWts(month),tgt={};
+    IDX.forEach(k=>{tgt[k]=tv*nw[k];});
+    let cash=0;
+    IDX.forEach(k=>{
+      const curV=su(pos[k])*pr[k];
+      if(curV>tgt[k]+0.01){
+        const[nl,tx]=sellFIFO(pos[k],(curV-tgt[k])/pr[k],pr[k],month);
+        pos[k]=nl;cash+=(curV-tgt[k])-tx;
+      }
+    });
+    const defs={};let td2=0;
+    IDX.forEach(k=>{const curV=su(pos[k])*pr[k];defs[k]=Math.max(0,tgt[k]-curV);td2+=defs[k];});
+    if(cash>0.01&&td2>0.01)IDX.forEach(k=>{if(defs[k]>0.01){const amt=cash*defs[k]/td2;pos[k].push({m:month,c:pr[k],u:amt/pr[k]});}});
+  }
+  const cagrs={};
+  for(let n=1;n<=8;n++){
+    const tm=addM(sm,n*12);if(tm>'2026-03')break;
+    const e=hist.find(h=>h.m===tm);
+    if(e){const pc=Math.pow(e.pv/100,1/n)-1,nc=e.n5v!=null?Math.pow(e.n5v/100,1/n)-1:null;cagrs[n+'y']={p:pc,n5:nc,out:nc!=null?pc-nc:null};}
+  }
+  const last=hist[hist.length-1];
+  if(last&&last.m==='2026-03'){
+    const yrs=diffM(sm,'2026-03')/12;
+    const pc=Math.pow(last.pv/100,1/yrs)-1,nc=last.n5v!=null?Math.pow(last.n5v/100,1/yrs)-1:null;
+    cagrs.td={p:pc,n5:nc,out:nc!=null?pc-nc:null,y:yrs};
+  }
+  return{hist,cagrs,sm};
+}
+
+const START_MONTHS=ALL_M.filter(m=>m>='2018-01'&&m<='2025-03');
+const SIMS={};START_MONTHS.forEach(sm=>{SIMS[sm]=runSim(sm);});
+
+// ── SUMMARY ────────────────────────────────────────────────────────────────────
+function pctFmt(v,d=1){return v!=null?(v*100).toFixed(d)+'%':'-';}
+function avg(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:null;}
+function median(a){if(!a.length)return null;const s=[...a].sort((x,y)=>x-y),mid=Math.floor(s.length/2);return s.length%2?s[mid]:(s[mid-1]+s[mid])/2;}
+function pctTd(v,d=1){if(v==null)return'<td>-</td>';const cls=v>0.001?'pos':v<-0.001?'neg':'neu';return`<td class="${cls}">${v>0?'+':''}${pctFmt(v,d)}</td>`;}
+
+const SUM_ROWS=[['1y',12],['2y',24],['3y',36],['4y',48],['5y',60],['6y',72],['7y',84],['8y',96],['Till date',null]];
+const sumBody=document.getElementById('sumBody');
+SUM_ROWS.forEach(([h,months])=>{
+  const vals=START_MONTHS.map(sm=>{
+    const res=SIMS[sm];if(!res)return null;
+    if(h==='Till date')return res.cagrs.td||null;
+    const tm=addM(sm,months);if(tm>'2026-03')return null;
+    return res.cagrs[h]||null;
+  }).filter(v=>v&&v.p!=null);
+  if(!vals.length)return;
+  const out=vals.filter(v=>v.out!=null).map(v=>v.out);
+  const prob=out.length?out.filter(v=>v>0).length/out.length:null;
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${h}</td><td class="neu">${vals.length}</td>
+    <td class="neu">${pctFmt(avg(vals.map(v=>v.p)))}</td>
+    <td class="neu">${pctFmt(avg(vals.filter(v=>v.n5!=null).map(v=>v.n5)))}</td>
+    ${pctTd(avg(out))}${pctTd(median(out))}
+    <td class="${prob!=null?(prob>0.6?'pos':prob<0.4?'neg':'neu'):''}">${prob!=null?(prob*100).toFixed(0)+'%':'-'}</td>
+    ${pctTd(out.length?Math.max(...out):null)}${pctTd(out.length?Math.min(...out):null)}`;
+  sumBody.appendChild(tr);
+});
+
+// ── DETAIL ────────────────────────────────────────────────────────────────────
+const sel=document.getElementById('msel');
+START_MONTHS.forEach(sm=>{const o=document.createElement('option');o.value=sm;o.textContent=mLbl(sm);sel.appendChild(o);});
+sel.value='2020-01';
+
+let vcChart=null,acChart=null;
+
+function renderDetail(sm){
+  const res=SIMS[sm];if(!res)return;
+  const{hist,cagrs}=res,wts=getWts(sm);
+
+  const nP=(wts.n*100).toFixed(1),nmP=(wts.nm*100).toFixed(1),nsP=(wts.ns*100).toFixed(1);
+  document.getElementById('initAlloc').innerHTML=`
+    <div class="alloc-header">Initial allocation — ${mLbl(sm)}  (PE as of ${mLbl(sm)} 1st → executed at first trading day close)</div>
+    <div class="alloc-bar">
+      <div class="alloc-seg" style="width:${nP}%;background:#4a9eff;color:#001a33;">${+nP>10?nP+'%':''}</div>
+      <div class="alloc-seg" style="width:${nmP}%;background:#a78bfa;color:#1a0040;">${+nmP>10?nmP+'%':''}</div>
+      <div class="alloc-seg" style="width:${nsP}%;background:#fb923c;color:#3d1500;">${+nsP>10?nsP+'%':''}</div>
+    </div>
+    <div class="alloc-labels">
+      <span><span class="alloc-dot" style="background:#4a9eff;"></span>Large (NIFTY100) ${nP}%</span>
+      <span><span class="alloc-dot" style="background:#a78bfa;"></span>Mid (NIFTYMIDCAP150) ${nmP}%</span>
+      <span><span class="alloc-dot" style="background:#fb923c;"></span>Small (NIFTYSMALLCAP250) ${nsP}%</span>
+    </div>`;
+
+  const td=cagrs.td,last=hist[hist.length-1];
+  const finalN5=last&&last.n5v!=null?last.n5v.toFixed(2):null;
+  document.getElementById('metCards').innerHTML=`
+    <div class="card"><div class="card-label">Portfolio CAGR</div><div class="card-val ${td&&td.p>0?'pos':'neg'}">${td?pctFmt(td.p):'-'}</div><div class="card-sub">${td?td.y.toFixed(1)+'y till date':''}</div></div>
+    <div class="card"><div class="card-label">NIFTY500 CAGR</div><div class="card-val">${td?pctFmt(td.n5):'-'}</div><div class="card-sub">${td?td.y.toFixed(1)+'y till date':''}</div></div>
+    <div class="card"><div class="card-label">Outperformance</div><div class="card-val ${td&&td.out>0?'pos':'neg'}">${td&&td.out!=null?(td.out>0?'+':'')+pctFmt(td.out):'-'}</div><div class="card-sub">vs NIFTY500</div></div>
+    <div class="card"><div class="card-label">Initial investment</div><div class="card-val">&#8377;100.00</div><div class="card-sub">per portfolio</div></div>
+    <div class="card"><div class="card-label">Final portfolio value</div><div class="card-val hi">&#8377;${last?last.pv.toFixed(2):'-'}</div><div class="card-sub">exit Mar 2026</div></div>
+    <div class="card"><div class="card-label">Final NIFTY500 value</div><div class="card-val">&#8377;${finalN5?finalN5:'-'}</div><div class="card-sub">buy &amp; hold equivalent</div></div>`;
+
+  const retBody=document.getElementById('retBody');retBody.innerHTML='';
+  [['1y',12],['2y',24],['3y',36],['4y',48],['5y',60],['6y',72],['7y',84],['8y',96],['Till date',null]].forEach(([h,mo])=>{
+    const key=h==='Till date'?'td':h,c=cagrs[key];if(!c)return;
+    const oCls=c.out>0.001?'pos':c.out<-0.001?'neg':'neu';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${h==='Till date'?'<strong>'+h+'</strong>':h}</td><td class="neu">${h==='Till date'?c.y.toFixed(2)+' yrs':h}</td>
+      <td class="${c.p>0?'pos':'neg'}">${pctFmt(c.p)}</td><td class="neu">${pctFmt(c.n5)}</td>
+      <td class="${oCls}">${c.out>0?'+':''}${pctFmt(c.out)}</td>`;
+    retBody.appendChild(tr);
+  });
+
+  const labs=hist.map(h=>mLbl(h.m)),pvs=hist.map(h=>+h.pv.toFixed(2)),n5vs=hist.map(h=>h.n5v!=null?+h.n5v.toFixed(2):null);
+  document.getElementById('vleg').innerHTML=`<div class="leg-item"><div class="leg-line" style="background:#c8f557;"></div>Portfolio</div><div class="leg-item"><div class="leg-line" style="background:#6b7280;"></div>NIFTY500</div>`;
+  document.getElementById('aleg').innerHTML=`<div class="leg-item"><div class="leg-line" style="background:#4a9eff;"></div>Large (NIFTY100)</div><div class="leg-item"><div class="leg-line" style="background:#a78bfa;"></div>Mid (NIFTYMIDCAP150)</div><div class="leg-item"><div class="leg-line" style="background:#fb923c;"></div>Small (NIFTYSMALLCAP250)</div>`;
+
+  const cOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,backgroundColor:'#1c2028',titleColor:'#8892a4',bodyColor:'#e8eaf0',borderColor:'rgba(255,255,255,0.1)',borderWidth:1}},scales:{x:{ticks:{maxTicksLimit:10,maxRotation:0,color:'#545e70',font:{size:10,family:'DM Mono'}},grid:{color:'rgba(255,255,255,0.04)'}}}};
+
+  if(vcChart)vcChart.destroy();
+  vcChart=new Chart(document.getElementById('vc'),{type:'line',data:{labels:labs,datasets:[
+    {label:'Portfolio',data:pvs,borderColor:'#c8f557',backgroundColor:'rgba(200,245,87,0.06)',borderWidth:2,pointRadius:0,tension:0.3,fill:true},
+    {label:'NIFTY500',data:n5vs,borderColor:'#6b7280',borderWidth:1.5,borderDash:[5,4],pointRadius:0,tension:0.3}
+  ]},options:{...cOpts,scales:{...cOpts.scales,y:{ticks:{callback:v=>'₹'+v.toFixed(0),color:'#545e70',font:{size:10,family:'DM Mono'}},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+
+  if(acChart)acChart.destroy();
+  acChart=new Chart(document.getElementById('ac'),{type:'line',data:{labels:labs,datasets:[
+    {label:'Large',data:hist.map(h=>+(h.aw.n*100).toFixed(1)),borderColor:'#4a9eff',backgroundColor:'rgba(74,158,255,0.4)',borderWidth:1,pointRadius:0,fill:true,stack:'s'},
+    {label:'Mid',data:hist.map(h=>+(h.aw.nm*100).toFixed(1)),borderColor:'#a78bfa',backgroundColor:'rgba(167,139,250,0.4)',borderWidth:1,pointRadius:0,fill:true,stack:'s'},
+    {label:'Small',data:hist.map(h=>+(h.aw.ns*100).toFixed(1)),borderColor:'#fb923c',backgroundColor:'rgba(251,146,60,0.4)',borderWidth:1,pointRadius:0,fill:true,stack:'s'}
+  ]},options:{...cOpts,scales:{...cOpts.scales,y:{stacked:true,min:0,max:100,ticks:{callback:v=>v+'%',color:'#545e70',font:{size:10,family:'DM Mono'}},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+}
+
+sel.addEventListener('change',()=>renderDetail(sel.value));
+renderDetail('2020-01');
+</script>
+</body>
+</html>
